@@ -17,4 +17,4 @@ Aplicação web desenvolvida para pequenas confeitarias, docerias e padarias art
 ## Como rodar o projeto
 1. Clone este repositório ou baixe os arquivos:
    ```bash
-   git clone [https://github.com/SEU-USUARIO/ponto-de-forno-mvp.git](https://github.com/SEU-USUARIO/ponto-de-forno-mvp.git)
+   git clone [https://github.com/JDougl4s/ponto-de-forno-mvp.git](https://github.com/JDougl4s/ponto-de-forno-mvp.git)
