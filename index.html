@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ponto de Forno — Gestão de Produção e Estoque</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script id="tailwind-config">
+    globalThis.tailwind = globalThis.tailwind || {};
+    globalThis.tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            'terracota': '#D96B43',
+            'marrom-cafe': '#3E2723',
+            'creme-claro': '#FAF7F2',
+            'success': '#1B6E3A',
+            'on-success': '#FFFFFF',
+            'success-container': '#DCFCE7',
+            'on-success-container': '#14532D',
+            'error': '#BA1A1A',
+            'on-error': '#FFFFFF',
+            'error-container': '#FFDAD6',
+            'on-error-container': '#93000A',
+            'light-primary': '#3E2723',
+            'light-on-primary': '#FFFFFF',
+            'light-primary-container': '#F0DFDC',
+            'light-on-primary-container': '#3E2723',
+            'light-secondary': '#A0401C',
+            'light-on-secondary': '#FFFFFF',
+            'light-secondary-container': '#FFDBCF',
+            'light-on-secondary-container': '#5C1900',
+            'light-background': '#FAF7F2',
+            'light-on-background': '#3E2723',
+            'light-surface': '#FFFFFF',
+            'light-on-surface': '#3E2723',
+            'light-surface-container-low': '#F6F3EE',
+            'light-surface-container': '#F0EDE9',
+            'light-surface-container-high': '#EBE8E3',
+            'light-surface-variant': '#F0DFDC',
+            'light-on-surface-variant': '#5B403C',
+            'light-outline': '#827472',
+            'light-outline-variant': '#E5E2DD',
+          },
+          borderRadius: {
+            'sm': '6px',
+            'DEFAULT': '10px',
+            'md': '12px',
+            'lg': '16px',
+            'xl': '24px',
+            'full': '9999px',
+          },
+          spacing: {
+            'gutter-xs': '4px',
+            'gutter-sm': '8px',
+            'gutter-md': '16px',
+            'gutter-lg': '24px',
+            'gutter-xl': '32px',
+            'section': '40px',
+            'page-margin': '24px',
+          },
+          fontFamily: {
+            'display': ['"Playfair"', 'sans-serif'],
+            'headline': ['"Playfair"', 'sans-serif'],
+            'title': ['"Poppins"', 'sans-serif'],
+            'body': ['"Poppins"', 'sans-serif'],
+            'label': ['"Poppins"', 'sans-serif'],
+            'mono': ['"Spline Sans Mono"', 'monospace'],
+          },
+          fontSize: {
+            'display-lg': ['36px', { lineHeight: '44px', letterSpacing: '-0.5px', fontWeight: '700' }],
+            'display-lg-mobile': ['28px', { lineHeight: '34px', letterSpacing: '-0.25px', fontWeight: '700' }],
+            'headline-lg': ['28px', { lineHeight: '36px', letterSpacing: '-0.25px', fontWeight: '700' }],
+            'headline-md': ['22px', { lineHeight: '28px', letterSpacing: '0px', fontWeight: '600' }],
+            'title-lg': ['18px', { lineHeight: '26px', letterSpacing: '0px', fontWeight: '600' }],
+            'title-md': ['16px', { lineHeight: '24px', letterSpacing: '0px', fontWeight: '600' }],
+            'body-lg': ['16px', { lineHeight: '24px', letterSpacing: '0px', fontWeight: '400' }],
+            'body-md': ['14px', { lineHeight: '20px', letterSpacing: '0px', fontWeight: '400' }],
+            'label-lg': ['14px', { lineHeight: '20px', letterSpacing: '0px', fontWeight: '600' }],
+            'label-sm': ['12px', { lineHeight: '16px', letterSpacing: '0.25px', fontWeight: '500' }],
+            'mono-md': ['14px', { lineHeight: '20px', letterSpacing: '0px', fontWeight: '500' }],
+          },
+        },
+      },
+    };
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair:wght@600;700&family=Poppins:wght@400;500;600&family=Spline+Sans+Mono:wght@500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=block" rel="stylesheet">
+  <style>
+    .material-symbols-outlined {
+      display: inline-block;
+      width: 1em;
+      height: 1em;
+      line-height: 1 !important;
+      box-sizing: content-box;
+      overflow: hidden;
+      white-space: nowrap;
+      direction: ltr;
+      vertical-align: middle;
+    }
+  </style>
+</head>
+<body class="bg-light-background text-light-on-background font-body antialiased">
+
+  <div class="min-h-screen flex flex-col lg:flex-row">
+
+    <!-- Mobile Top Bar -->
+    <header class="lg:hidden sticky top-0 z-30 bg-light-surface border-b border-light-outline-variant px-gutter-md py-3 flex items-center justify-between gap-gutter-md">
+      <div class="flex items-center gap-gutter-sm min-w-0">
+        <span class="w-9 h-9 rounded-md bg-light-primary text-light-on-primary flex items-center justify-center shrink-0">
+          <span class="material-symbols-outlined text-title-lg" aria-hidden="true">bakery_dining</span>
+        </span>
+        <span class="font-headline text-title-lg text-light-primary whitespace-nowrap">Ponto de Forno</span>
+      </div>
+      <button id="mobile-menu-btn" type="button" aria-label="Abrir menu" class="inline-flex items-center justify-center w-10 h-10 rounded-md bg-light-surface-container-low text-light-on-surface">
+        <span class="material-symbols-outlined text-title-lg" aria-hidden="true">menu</span>
+      </button>
+    </header>
+
+    <div id="sidebar-backdrop" class="hidden fixed inset-0 z-30 bg-light-primary opacity-40 lg:hidden"></div>
+
+    <!-- Left Sidebar -->
+    <aside id="app-sidebar" aria-label="Navegação principal" class="fixed inset-y-0 left-0 z-40 w-80 -translate-x-full lg:translate-x-0 lg:static lg:min-h-screen bg-light-surface border-r border-light-outline-variant flex flex-col justify-between p-gutter-lg transition-transform shrink-0">
+      <div class="flex flex-col gap-gutter-xl">
+        <div class="flex items-center justify-between gap-gutter-sm">
+          <div class="flex items-center gap-gutter-sm">
+            <div class="w-10 h-10 rounded-md bg-light-primary text-light-on-primary flex items-center justify-center shrink-0">
+              <span class="material-symbols-outlined text-headline-md" aria-hidden="true">bakery_dining</span>
+            </div>
+            <div class="flex flex-col">
+              <span class="font-headline text-title-lg text-light-primary leading-tight">Ponto de Forno</span>
+              <span class="font-body text-label-sm text-light-on-surface-variant">Confeitaria Artesanal</span>
+            </div>
+          </div>
+          <button id="mobile-close-btn" type="button" aria-label="Fechar menu" class="lg:hidden inline-flex items-center justify-center w-8 h-8 rounded-md text-light-on-surface-variant">
+            <span class="material-symbols-outlined text-title-md" aria-hidden="true">close</span>
+          </button>
+        </div>
+
+        <nav class="flex flex-col gap-gutter-xs" aria-label="Seções do sistema">
+          <button type="button" data-tab-target="painel" class="nav-tab w-full flex items-center justify-between gap-gutter-sm px-3.5 py-3 rounded-md text-left bg-light-primary text-light-on-primary transition-colors" aria-current="page">
+            <span class="flex items-center gap-gutter-sm whitespace-nowrap">
+              <span class="material-symbols-outlined text-title-lg shrink-0" aria-hidden="true">dashboard</span>
+              <span class="font-body text-label-lg">Painel &amp; Recomendação</span>
+            </span>
+          </button>
+
+          <button type="button" data-tab-target="pedidos" class="nav-tab w-full flex items-center justify-between gap-gutter-sm px-3.5 py-3 rounded-md text-left text-light-on-surface-variant hover:bg-light-surface-container-low hover:text-light-on-surface transition-colors">
+            <span class="flex items-center gap-gutter-sm whitespace-nowrap">
+              <span class="material-symbols-outlined text-title-lg shrink-0" aria-hidden="true">receipt_long</span>
+              <span class="font-body text-label-lg">Pedidos &amp; Encomendas</span>
+            </span>
+            <span id="nav-orders-count" class="inline-flex items-center justify-center min-w-6 h-6 px-1.5 rounded-full bg-light-surface-container text-light-on-surface font-mono text-label-sm tabular-nums shrink-0">
+              <span>4</span>
+            </span>
+          </button>
+
+          <button type="button" data-tab-target="estoque" class="nav-tab w-full flex items-center justify-between gap-gutter-sm px-3.5 py-3 rounded-md text-left text-light-on-surface-variant hover:bg-light-surface-container-low hover:text-light-on-surface transition-colors">
+            <span class="flex items-center gap-gutter-sm whitespace-nowrap">
+              <span class="material-symbols-outlined text-title-lg shrink-0" aria-hidden="true">inventory_2</span>
+              <span class="font-body text-label-lg">Estoque &amp; Ficha Técnica</span>
+            </span>
+            <span id="nav-low-stock-count" class="inline-flex items-center justify-center min-w-6 h-6 px-1.5 rounded-full bg-error-container text-on-error-container font-mono text-label-sm tabular-nums shrink-0">
+              <span>3</span>
+            </span>
+          </button>
+
+          <button type="button" data-tab-target="compras" class="nav-tab w-full flex items-center justify-between gap-gutter-sm px-3.5 py-3 rounded-md text-left text-light-on-surface-variant hover:bg-light-surface-container-low hover:text-light-on-surface transition-colors">
+            <span class="flex items-center gap-gutter-sm whitespace-nowrap">
+              <span class="material-symbols-outlined text-title-lg shrink-0" aria-hidden="true">shopping_bag</span>
+              <span class="font-body text-label-lg">Lista de Compras</span>
+            </span>
+            <span id="nav-shopping-count" class="inline-flex items-center justify-center min-w-6 h-6 px-1.5 rounded-full bg-light-secondary text-light-on-secondary font-mono text-label-sm tabular-nums shrink-0">
+              <span>4</span>
+            </span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- Sidebar Footer Info + DB Status -->
+      <div class="flex flex-col gap-gutter-sm">
+        <div class="bg-light-surface-container-low rounded-md p-gutter-md flex flex-col gap-gutter-xs border border-light-outline-variant">
+          <span class="font-body text-label-sm text-light-secondary">Fornada do Dia</span>
+          <p class="font-body text-body-md text-light-on-surface">
+            Receita: Brownie Tradicional (lote de 10 un.)
+          </p>
+        </div>
+
+        <div class="flex items-center justify-between px-1 pt-1">
+          <span id="db-status-badge" class="inline-flex items-center gap-1.5 font-body text-label-sm text-light-on-surface-variant">
+            <span id="db-status-dot" class="w-2 h-2 rounded-full bg-amber-500"></span>
+            <span id="db-status-text">Conectando...</span>
+          </span>
+          <button id="btn-reset-demo" type="button" class="font-body text-label-sm text-light-secondary hover:underline">
+            Resetar Demo
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 p-gutter-md md:p-gutter-xl max-w-6xl w-full mx-auto flex flex-col gap-gutter-lg">
+
+      <!-- Toast Banner -->
+      <div id="toast-banner" role="status" aria-live="polite" class="hidden rounded-md bg-light-primary text-light-on-primary px-gutter-lg py-3.5 flex items-center justify-between gap-gutter-md">
+        <div class="flex items-center gap-gutter-sm">
+          <span class="material-symbols-outlined text-terracota" aria-hidden="true">check_circle</span>
+          <span id="toast-message" class="font-body text-body-md"></span>
+        </div>
+        <button id="toast-close-btn" type="button" aria-label="Fechar aviso" class="text-light-on-primary opacity-80 hover:opacity-100">
+          <span class="material-symbols-outlined text-title-md" aria-hidden="true">close</span>
+        </button>
+      </div>
+
+      <!-- TAB 1: PAINEL & RECOMENDAÇÃO -->
+      <section id="tab-painel" class="tab-panel flex flex-col gap-gutter-lg">
+        <header class="flex flex-wrap items-end justify-between gap-gutter-md">
+          <div class="flex flex-col gap-gutter-xs">
+            <h1 class="font-headline text-display-lg-mobile md:text-display-lg text-light-primary">
+              Painel &amp; Recomendação
+            </h1>
+            <p class="font-body text-body-md text-light-on-surface-variant">
+              Acompanhe os números da semana e confirme a fornada recomendada para hoje.
+            </p>
+          </div>
+          <span class="font-body text-label-sm text-light-on-surface-variant bg-light-surface border border-light-outline-variant px-3.5 py-2 rounded-full">
+            Hoje • Turno da Manhã
+          </span>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-gutter-md items-stretch">
+          <article class="h-full bg-light-surface text-light-on-surface rounded-lg border border-light-outline-variant p-gutter-lg flex flex-col justify-between gap-gutter-sm">
+            <header class="flex items-center justify-between gap-gutter-sm">
+              <h2 class="font-body text-label-sm text-light-on-surface-variant">Vendas da Semana</h2>
+              <span class="w-9 h-9 rounded-md bg-light-surface-container-low flex items-center justify-center text-terracota">
+                <span class="material-symbols-outlined text-title-lg" aria-hidden="true">trending_up</span>
+              </span>
+            </header>
+            <div class="flex items-baseline gap-gutter-sm">
+              <span id="kpi-weekly-sales" class="font-headline text-headline-lg tabular-nums text-light-primary">140 un.</span>
+            </div>
+            <p id="kpi-daily-avg" class="font-body text-body-md text-light-on-surface-variant tabular-nums">
+              Média de 20 un./dia (7 dias)
+            </p>
+          </article>
+
+          <article class="h-full bg-light-surface text-light-on-surface rounded-lg border border-light-outline-variant p-gutter-lg flex flex-col justify-between gap-gutter-sm">
+            <header class="flex items-center justify-between gap-gutter-sm">
+              <h2 class="font-body text-label-sm text-light-on-surface-variant">Encomendas Confirmadas</h2>
+              <span class="w-9 h-9 rounded-md bg-light-surface-container-low flex items-center justify-center text-terracota">
+                <span class="material-symbols-outlined text-title-lg" aria-hidden="true">event_available</span>
+              </span>
+            </header>
+            <div class="flex items-baseline gap-gutter-sm">
+              <span id="kpi-future-orders" class="font-headline text-headline-lg tabular-nums text-light-primary">10 un.</span>
+            </div>
+            <p id="kpi-orders-clients" class="font-body text-body-md text-light-on-surface-variant">
+              2 entregas agendadas para hoje
+            </p>
+          </article>
+
+          <article class="h-full bg-light-surface text-light-on-surface rounded-lg border border-light-outline-variant p-gutter-lg flex flex-col justify-between gap-gutter-sm">
+            <header class="flex items-center justify-between gap-gutter-sm">
+              <h2 class="font-body text-label-sm text-light-on-surface-variant">Alertas de Estoque Baixo</h2>
+              <span class="w-9 h-9 rounded-md bg-error-container flex items-center justify-center text-on-error-container">
+                <span class="material-symbols-outlined text-title-lg" aria-hidden="true">warning</span>
+              </span>
+            </header>
+            <div class="flex items-baseline gap-gutter-sm">
+              <span id="kpi-low-stock" class="font-headline text-headline-lg tabular-nums text-error">3 insumos</span>
+            </div>
+            <p class="font-body text-body-md text-light-on-surface-variant">
+              Abaixo do estoque mínimo definido
+            </p>
+          </article>
+        </div>
+
+        <article class="bg-light-surface text-light-on-surface rounded-lg border border-light-outline-variant p-gutter-lg md:p-gutter-xl flex flex-col gap-gutter-lg">
+          <header class="flex flex-wrap items-start justify-between gap-gutter-md">
+            <div class="flex flex-col gap-gutter-xs">
+              <div class="flex items-center gap-gutter-sm">
+                <span class="material-symbols-outlined text-terracota text-title-md" aria-hidden="true">oven_gen</span>
+                <span class="font-body text-label-sm text-light-secondary">Recomendação de Produção para Hoje</span>
+              </div>
+              <h2 class="font-headline text-headline-lg text-light-primary">Brownie Tradicional</h2>
+              <p class="font-body text-body-md text-light-on-surface-variant">
+                Produção sugerida em lotes padrão de 10 unidades.
+              </p>
+            </div>
+
+            <div class="bg-light-surface-container-low border border-light-outline-variant rounded-lg px-gutter-lg py-gutter-md flex flex-col items-end">
+              <span id="rec-total-units" class="font-headline text-display-lg-mobile md:text-display-lg tabular-nums text-light-secondary">30 un.</span>
+              <span id="rec-total-batches" class="font-mono text-mono-md tabular-nums text-light-on-surface-variant">3 lotes de 10 un.</span>
+            </div>
+          </header>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-gutter-md bg-light-surface-container-low rounded-md p-gutter-md border border-light-outline-variant">
+            <div class="flex flex-col gap-gutter-xs">
+              <span class="font-body text-label-sm text-light-on-surface-variant">Média diária de vendas</span>
+              <span id="calc-avg-sales" class="font-mono text-title-md tabular-nums text-light-primary">20 un.</span>
+            </div>
+            <div class="flex flex-col gap-gutter-xs">
+              <span class="font-body text-label-sm text-light-on-surface-variant">(+) Encomendas futuras</span>
+              <span id="calc-future-orders" class="font-mono text-title-md tabular-nums text-light-primary">10 un.</span>
+            </div>
+            <div class="flex flex-col gap-gutter-xs">
+              <span class="font-body text-label-sm text-light-on-surface-variant">(=) Meta para a fornada</span>
+              <span id="calc-total-target" class="font-mono text-title-md tabular-nums text-light-secondary">30 un. (3 lotes)</span>
+            </div>
+          </div>
+
+          <div id="production-status-box" class="hidden rounded-md bg-success-container text-on-success-container px-gutter-md py-3 flex items-center gap-gutter-sm">
+            <span class="material-symbols-outlined text-title-lg" aria-hidden="true">task_alt</span>
+            <span id="production-status-text" class="font-body text-body-md"></span>
+          </div>
+
+          <footer class="flex flex-wrap items-center justify-between gap-gutter-md pt-2 border-t border-light-outline-variant">
+            <div class="flex flex-wrap items-center gap-gutter-md">
+              <button id="btn-confirm-production" type="button" class="inline-flex items-center justify-center gap-gutter-sm px-gutter-lg py-3 rounded-md bg-light-secondary text-light-on-secondary font-body text-label-lg hover:opacity-90 active:scale-[0.99] transition-opacity">
+                <span class="material-symbols-outlined text-title-lg" aria-hidden="true">check_circle</span>
+                <span>Confirmar Produção</span>
+              </button>
+
+              <button id="btn-open-loss-modal" type="button" class="inline-flex items-center justify-center gap-gutter-sm px-gutter-lg py-3 rounded-md bg-light-surface border border-light-outline-variant text-light-on-surface font-body text-label-lg hover:bg-light-surface-container-low transition-colors">
+                <span class="material-symbols-outlined text-title-lg text-error" aria-hidden="true">report_problem</span>
+                <span>Registrar Perda</span>
+              </button>
+            </div>
+
+            <span id="loss-summary-text" class="font-body text-label-sm text-light-on-surface-variant tabular-nums">
+              Perdas registradas hoje: 0 un.
+            </span>
+          </footer>
+        </article>
+      </section>
+
+      <!-- TAB 2: PEDIDOS & ENCOMENDAS -->
+      <section id="tab-pedidos" class="tab-panel hidden flex flex-col gap-gutter-lg">
+        <header class="flex flex-col gap-gutter-xs">
+          <h1 class="font-headline text-display-lg-mobile md:text-display-lg text-light-primary">
+            Pedidos &amp; Encomendas
+          </h1>
+          <p class="font-body text-body-md text-light-on-surface-variant">
+            Registre vendas de balcão ou encomendas futuras para atualizar a recomendação de produção.
+          </p>
+        </header>
+
+        <form id="order-form" class="bg-light-surface rounded-lg border border-light-outline-variant p-gutter-lg grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-gutter-md items-end">
+          <label class="flex flex-col gap-1.5 lg:col-span-4">
+            <span class="font-body text-label-sm text-light-on-surface-variant">Nome do Cliente</span>
+            <input id="order-client" type="text" required placeholder="Ex.: Camila Souza" class="w-full rounded-md border border-light-outline-variant bg-light-surface px-3.5 py-2.5 font-body text-body-md text-light-on-surface placeholder:text-light-outline focus:border-terracota focus:ring-1 focus:ring-terracota">
+          </label>
+
+          <label class="flex flex-col gap-1.5 lg:col-span-3">
+            <span class="font-body text-label-sm text-light-on-surface-variant">Produto</span>
+            <select id="order-product" class="w-full rounded-md border border-light-outline-variant bg-light-surface px-3.5 py-2.5 font-body text-body-md text-light-on-surface focus:border-terracota focus:ring-1 focus:ring-terracota">
+              <option value="Brownie Tradicional">Brownie Tradicional</option>
+              <option value="Brownie de Nozes">Brownie de Nozes</option>
+              <option value="Brownie Doce de Leite">Brownie Doce de Leite</option>
+            </select>
+          </label>
+
+          <label class="flex flex-col gap-1.5 lg:col-span-2">
+            <span class="font-body text-label-sm text-light-on-surface-variant">Quantidade</span>
+            <input id="order-qty" type="number" min="1" step="1" value="10" required class="w-full rounded-md border border-light-outline-variant bg-light-surface px-3.5 py-2.5 font-mono text-mono-md tabular-nums text-light-on-surface focus:border-terracota focus:ring-1 focus:ring-terracota">
+          </label>
+
+          <label class="flex flex-col gap-1.5 lg:col-span-3">
+            <span class="font-body text-label-sm text-light-on-surface-variant">Tipo</span>
+            <select id="order-type" class="w-full rounded-md border border-light-outline-variant bg-light-surface px-3.5 py-2.5 font-body text-body-md text-light-on-surface focus:border-terracota focus:ring-1 focus:ring-terracota">
+              <option value="Encomenda Futura">Encomenda Futura</option>
+              <option value="Venda Concluída">Venda Concluída</option>
+            </select>
+          </label>
+
+          <div class="sm:col-span-2 lg:col-span-12 flex justify-end">
+            <button type="submit" class="inline-flex items-center justify-center gap-gutter-sm px-gutter-lg py-2.5 rounded-md bg-light-primary text-light-on-primary font-body text-label-lg hover:opacity-90 transition-opacity">
+              <span class="material-symbols-outlined text-title-md" aria-hidden="true">add</span>
+              <span>Adicionar Registro</span>
+            </button>
+          </div>
+        </form>
+
+        <div class="bg-light-surface rounded-lg border border-light-outline-variant overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead class="bg-light-surface-container-low border-b border-light-outline-variant">
+              <tr>
+                <th scope="col" class="px-gutter-lg py-3.5 font-body text-label-sm text-light-on-surface-variant">Cliente</th>
+                <th scope="col" class="px-gutter-lg py-3.5 font-body text-label-sm text-light-on-surface-variant">Produto</th>
+                <th scope="col" class="px-gutter-lg py-3.5 font-body text-label-sm text-light-on-surface-variant text-right">Quantidade</th>
+                <th scope="col" class="px-gutter-lg py-3.5 font-body text-label-sm text-light-on-surface-variant">Tipo</th>
+                <th scope="col" class="px-gutter-lg py-3.5 font-body text-label-sm text-light-on-surface-variant">Registro</th>
+              </tr>
+            </thead>
+            <tbody id="orders-table-body" class="divide-y divide-light-outline-variant"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- TAB 3: ESTOQUE & FICHA TÉCNICA -->
+      <section id="tab-estoque" class="tab-panel hidden flex flex-col gap-gutter-lg">
+        <header class="flex flex-wrap items-end justify-between gap-gutter-md">
+          <div class="flex flex-col gap-gutter-xs">
+            <h1 class="font-headline text-display-lg-mobile md:text-display-lg text-light-primary">
+              Estoque &amp; Ficha Técnica
+            </h1>
+            <p class="font-body text-body-md text-light-on-surface-variant">
+              Monitore os insumos da confeitaria e consulte a receita padrão do Brownie Tradicional.
+            </p>
+          </div>
+          <button id="btn-open-recipe-modal" type="button" class="inline-flex items-center justify-center gap-gutter-sm px-gutter-lg py-2.5 rounded-md bg-light-surface border border-light-outline-variant text-light-on-surface font-body text-label-lg hover:bg-light-surface-container-low transition-colors">
+            <span class="material-symbols-outlined text-terracota text-title-lg" aria-hidden="true">menu_book</span>
+            <span>Abrir Ficha Técnica (Modal)</span>
+          </button>
+        </header>
+
+        <div class="grid grid-cols-1 xl:grid-cols-12 gap-gutter-lg items-start">
+          <div class="xl:col-span-8 bg-light-surface rounded-lg border border-light-outline-variant overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead class="bg-light-surface-container-low border-b border-light-outline-variant">
+                <tr>
+                  <th scope="col" class="px-gutter-lg py-3.5 font-body text-label-sm text-light-on-surface-variant">Nome do Ingrediente</th>
+                  <th scope="col" class="px-gutter-lg py-3.5 font-body text-label-sm text-light-on-surface-variant text-right">Estoque Atual</th>
+                  <th scope="col" class="px-gutter-lg py-3.5 font-body text-label-sm text-light-on-surface-variant text-right">Estoque Mínimo</th>
+                  <th scope="col" class="px-gutter-lg py-3.5 font-body text-label-sm text-light-on-surface-variant">Situação</th>
+                </tr>
+              </thead>
+              <tbody id="inventory-table-body" class="divide-y divide-light-outline-variant"></tbody>
+            </table>
+          </div>
+
+          <aside class="xl:col-span-4 bg-light-surface rounded-lg border border-light-outline-variant p-gutter-lg flex flex-col gap-gutter-md">
+            <header class="flex items-start justify-between gap-gutter-sm border-b border-light-outline-variant pb-gutter-md">
+              <div class="flex flex-col gap-gutter-xs">
+                <span class="font-body text-label-sm text-light-secondary">Ficha Técnica</span>
+                <h2 class="font-headline text-headline-md text-light-primary">Brownie Tradicional</h2>
+                <span class="font-body text-label-sm text-light-on-surface-variant">Rendimento: 1 lote de 10 un.</span>
+              </div>
+              <span class="w-10 h-10 rounded-md bg-light-surface-container-low flex items-center justify-center text-terracota shrink-0">
+                <span class="material-symbols-outlined text-title-lg" aria-hidden="true">menu_book</span>
+              </span>
+            </header>
+            <ul id="recipe-card-list" class="flex flex-col divide-y divide-light-outline-variant"></ul>
+          </aside>
+        </div>
+      </section>
+
+      <!-- TAB 4: LISTA DE COMPRAS -->
+      <section id="tab-compras" class="tab-panel hidden flex flex-col gap-gutter-lg">
+        <header class="flex flex-wrap items-end justify-between gap-gutter-md">
+          <div class="flex flex-col gap-gutter-xs">
+            <h1 class="font-headline text-display-lg-mobile md:text-display-lg text-light-primary">
+              Lista de Compras
+            </h1>
+            <p class="font-body text-body-md text-light-on-surface-variant">
+              Cálculo automático: necessidade da produção recomendada + estoque mínimo versus estoque atual.
+            </p>
+          </div>
+          <div class="bg-light-surface border border-light-outline-variant rounded-md px-gutter-md py-2 flex items-center gap-gutter-sm">
+            <span class="material-symbols-outlined text-terracota text-title-md" aria-hidden="true">calculate</span>
+            <span id="shopping-formula-badge" class="font-mono text-label-sm tabular-nums text-light-on-surface">
+              Base: 30 un. (3 lotes) + Estoque Mín.
+            </span>
+          </div>
+        </header>
+
+        <div class="bg-light-surface rounded-lg border border-light-outline-variant overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead class="bg-light-surface-container-low border-b border-light-outline-variant">
+              <tr>
+                <th scope="col" class="px-gutter-lg py-3.5 font-body text-label-sm text-light-on-surface-variant">Insumo a Comprar</th>
+                <th scope="col" class="px-gutter-lg py-3.5 font-body text-label-sm text-light-on-surface-variant text-right">Estoque Atual</th>
+                <th scope="col" class="px-gutter-lg py-3.5 font-body text-label-sm text-light-on-surface-variant text-right">Produção + Mínimo</th>
+                <th scope="col" class="px-gutter-lg py-3.5 font-body text-label-sm text-light-on-surface-variant text-right">Quantidade a Repor</th>
+              </tr>
+            </thead>
+            <tbody id="shopping-table-body" class="divide-y divide-light-outline-variant"></tbody>
+          </table>
+        </div>
+
+        <div id="shopping-empty-state" class="hidden bg-light-surface rounded-lg border border-light-outline-variant p-gutter-xl text-center flex flex-col items-center gap-gutter-sm">
+          <span class="material-symbols-outlined text-success text-display-lg" aria-hidden="true">verified</span>
+          <h2 class="font-headline text-headline-md text-light-primary">Estoque completo para a fornada</h2>
+          <p class="font-body text-body-md text-light-on-surface-variant">
+            Todos os insumos atendem a produção recomendada e o estoque mínimo.
+          </p>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- MODAL: REGISTRAR PERDA -->
+  <div id="loss-modal" role="dialog" aria-modal="true" aria-labelledby="loss-modal-title" class="hidden fixed inset-0 z-50 flex items-center justify-center p-gutter-md">
+    <div id="loss-modal-backdrop" class="fixed inset-0 bg-light-primary opacity-45"></div>
+    <div class="relative z-10 w-full max-w-md bg-light-surface rounded-lg border border-light-outline-variant p-gutter-lg flex flex-col gap-gutter-lg">
+      <header class="flex items-center justify-between gap-gutter-sm">
+        <h2 id="loss-modal-title" class="font-headline text-headline-md text-light-primary">Registrar Perda</h2>
+        <button id="loss-modal-close" type="button" aria-label="Fechar janela" class="inline-flex items-center justify-center w-9 h-9 rounded-md bg-light-surface-container-low text-light-on-surface">
+          <span class="material-symbols-outlined text-title-md" aria-hidden="true">close</span>
+        </button>
+      </header>
+
+      <form id="loss-form" class="flex flex-col gap-gutter-md">
+        <label class="flex flex-col gap-1.5">
+          <span class="font-body text-label-sm text-light-on-surface-variant">Quantidade perdida (un.)</span>
+          <input id="loss-qty" type="number" min="1" value="2" required class="w-full rounded-md border border-light-outline-variant bg-light-surface px-3.5 py-2.5 font-mono text-mono-md tabular-nums text-light-on-surface">
+        </label>
+
+        <label class="flex flex-col gap-1.5">
+          <span class="font-body text-label-sm text-light-on-surface-variant">Motivo da perda</span>
+          <select id="loss-reason" class="w-full rounded-md border border-light-outline-variant bg-light-surface px-3.5 py-2.5 font-body text-body-md text-light-on-surface">
+            <option value="Assamento excessivo">Assamento excessivo</option>
+            <option value="Quebra no corte">Quebra no corte</option>
+            <option value="Validade vencida">Validade vencida</option>
+            <option value="Outro motivo">Outro motivo</option>
+          </select>
+        </label>
+
+        <div class="flex items-center justify-end gap-gutter-sm pt-2">
+          <button id="loss-modal-cancel" type="button" class="px-gutter-md py-2.5 rounded-md bg-light-surface border border-light-outline-variant text-light-on-surface font-body text-label-lg">
+            Cancelar
+          </button>
+          <button type="submit" class="px-gutter-lg py-2.5 rounded-md bg-light-primary text-light-on-primary font-body text-label-lg">
+            Salvar Perda
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: FICHA TÉCNICA -->
+  <div id="recipe-modal" role="dialog" aria-modal="true" aria-labelledby="recipe-modal-title" class="hidden fixed inset-0 z-50 flex items-center justify-center p-gutter-md">
+    <div id="recipe-modal-backdrop" class="fixed inset-0 bg-light-primary opacity-45"></div>
+    <div class="relative z-10 w-full max-w-lg bg-light-surface rounded-lg border border-light-outline-variant p-gutter-lg flex flex-col gap-gutter-md">
+      <header class="flex items-start justify-between gap-gutter-sm border-b border-light-outline-variant pb-gutter-md">
+        <div class="flex flex-col gap-gutter-xs">
+          <span class="font-body text-label-sm text-light-secondary">Ficha Técnica Padrão</span>
+          <h2 id="recipe-modal-title" class="font-headline text-headline-md text-light-primary">
+            Brownie Tradicional — Lote de 10 un.
+          </h2>
+        </div>
+        <button id="recipe-modal-close" type="button" aria-label="Fechar ficha técnica" class="inline-flex items-center justify-center w-9 h-9 rounded-md bg-light-surface-container-low text-light-on-surface">
+          <span class="material-symbols-outlined text-title-md" aria-hidden="true">close</span>
+        </button>
+      </header>
+
+      <ul id="recipe-modal-list" class="flex flex-col divide-y divide-light-outline-variant"></ul>
+
+      <footer class="bg-light-surface-container-low rounded-md p-gutter-md flex items-center justify-between gap-gutter-sm">
+        <span class="font-body text-body-md text-light-on-surface-variant">Tempo médio de forno: 28 min a 180 °C</span>
+        <button id="recipe-modal-done" type="button" class="px-gutter-md py-2 rounded-md bg-light-primary text-light-on-primary font-body text-label-lg">
+          Fechar
+        </button>
+      </footer>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      // =========================================================================
+      // CONFIGURAÇÃO DO SUPABASE (COLE SUAS CHAVES AQUI)
+      // =========================================================================
+      const SUPABASE_URL = "https://uhxymhrxwnyfinoftdmr.supabase.com";
+      const SUPABASE_KEY = "sb_publishable_8XbQZQqZ1K7rDrBPfkmu0w_RzJUbC30";
+
+      const isConfigured = SUPABASE_URL.startsWith("http") && SUPABASE_KEY.startsWith("sb_");
+      const sb = (isConfigured && window.supabase)
+        ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+        : null;
+
+      // Dados padrão (usados como fallback ou no botão Resetar Demo)
+      const INITIAL_ORDERS = [
+        { id: 1, client: "Maria Clara", product: "Brownie Tradicional", qty: 6, type: "Encomenda Futura", time: "Hoje, 14:00" },
+        { id: 2, client: "Café Aroma", product: "Brownie Tradicional", qty: 4, type: "Encomenda Futura", time: "Hoje, 16:30" },
+        { id: 3, client: "Lucas Ferreira", product: "Brownie Tradicional", qty: 5, type: "Venda Concluída", time: "Hoje, 09:40" },
+        { id: 4, client: "Ana Beatriz", product: "Brownie de Nozes", qty: 8, type: "Venda Concluída", time: "Ontem, 17:15" }
+      ];
+
+      const INITIAL_INGREDIENTS = [
+        { id: "choc", name: "Chocolate Meio Amargo 50%", current: 850, min: 1000, unit: "g", perBatch: 400, order: 1 },
+        { id: "butter", name: "Manteiga sem Sal", current: 1200, min: 600, unit: "g", perBatch: 200, order: 2 },
+        { id: "sugar", name: "Açúcar Refinado", current: 2400, min: 1000, unit: "g", perBatch: 250, order: 3 },
+        { id: "eggs", name: "Ovos Caipiras", current: 10, min: 12, unit: "un.", perBatch: 4, order: 4 },
+        { id: "flour", name: "Farinha de Trigo", current: 1800, min: 800, unit: "g", perBatch: 120, order: 5 },
+        { id: "cocoa", name: "Cacau em Pó 100%", current: 180, min: 300, unit: "g", perBatch: 50, order: 6 }
+      ];
+
+      const BASE_HISTORICAL_SALES = 127; // + 13 un. das vendas iniciais = 140 un.
+
+      const state = {
+        weeklySales: 140,
+        lossesToday: 0,
+        orders: JSON.parse(JSON.stringify(INITIAL_ORDERS)),
+        ingredients: JSON.parse(JSON.stringify(INITIAL_INGREDIENTS))
+      };
+
+      function setDbBadge(connected, label) {
+        const dot = document.getElementById("db-status-dot");
+        const text = document.getElementById("db-status-text");
+        dot.className = "w-2 h-2 rounded-full " + (connected ? "bg-success" : "bg-amber-500");
+        text.textContent = label;
+      }
+
+      // =========================================================================
+      // SINCRONIZAÇÃO COM SUPABASE
+      // =========================================================================
+      async function loadFromSupabase() {
+        if (!sb) {
+          setDbBadge(false, "Modo Local");
+          renderAll();
+          return;
+        }
+
+        try {
+          const [ingRes, pedRes, perdasRes] = await Promise.all([
+            sb.from("pf_ingredientes").select("*").order("ordem", { ascending: true }),
+            sb.from("pf_pedidos").select("*").order("id", { ascending: false }),
+            sb.from("pf_perdas").select("*")
+          ]);
+
+          if (ingRes.error || pedRes.error || perdasRes.error) {
+            throw new Error("Erro ao ler tabelas");
+          }
+
+          if (ingRes.data && ingRes.data.length > 0) {
+            state.ingredients = ingRes.data.map(row => ({
+              id: row.id,
+              name: row.nome,
+              current: Number(row.estoque_atual),
+              min: Number(row.estoque_minimo),
+              unit: row.unidade,
+              perBatch: Number(row.qtd_por_lote),
+              order: row.ordem
+            }));
+          }
+
+          if (pedRes.data) {
+            state.orders = pedRes.data.map(row => ({
+              id: row.id,
+              client: row.cliente,
+              product: row.produto,
+              qty: Number(row.quantidade),
+              type: row.tipo,
+              time: row.horario
+            }));
+
+            const completedSales = state.orders
+              .filter(o => o.type === "Venda Concluída")
+              .reduce((sum, o) => sum + o.qty, 0);
+            state.weeklySales = BASE_HISTORICAL_SALES + completedSales;
+          }
+
+          if (perdasRes.data) {
+            state.lossesToday = perdasRes.data.reduce((sum, row) => sum + Number(row.quantidade), 0);
+          }
+
+          setDbBadge(true, "Supabase Online");
+        } catch (err) {
+          console.error(err);
+          setDbBadge(false, "Modo Local (Offline)");
+        }
+
+        renderAll();
+      }
+
+      // =========================================================================
+      // CÁLCULOS E RENDERIZAÇÃO
+      // =========================================================================
+      function formatQty(val, unit) {
+        return val.toLocaleString("pt-BR") + " " + unit;
+      }
+
+      function getRecommendation() {
+        const dailyAvg = Math.round(state.weeklySales / 7);
+        const futureOrders = state.orders.filter(o => o.type === "Encomenda Futura");
+        const futureOrdersQty = futureOrders.reduce((sum, o) => sum + o.qty, 0);
+        const futureOrdersCount = futureOrders.length;
+        const rawTotal = dailyAvg + futureOrdersQty;
+        const batches = Math.max(1, Math.ceil(rawTotal / 10));
+        const recommendedUnits = batches * 10;
+        return { dailyAvg, futureOrdersQty, futureOrdersCount, rawTotal, batches, recommendedUnits };
+      }
+
+      function showToast(msg) {
+        const banner = document.getElementById("toast-banner");
+        document.getElementById("toast-message").textContent = msg;
+        banner.classList.remove("hidden");
+      }
+
+      function renderDashboard() {
+        const rec = getRecommendation();
+        const lowStockCount = state.ingredients.filter(i => i.current <= i.min).length;
+
+        document.getElementById("kpi-weekly-sales").textContent = state.weeklySales + " un.";
+        document.getElementById("kpi-daily-avg").textContent = "Média de " + rec.dailyAvg + " un./dia (7 dias)";
+        document.getElementById("kpi-future-orders").textContent = rec.futureOrdersQty + " un.";
+        document.getElementById("kpi-orders-clients").textContent = rec.futureOrdersCount + (rec.futureOrdersCount === 1 ? " entrega agendada para hoje" : " entregas agendadas para hoje");
+        document.getElementById("kpi-low-stock").textContent = lowStockCount + (lowStockCount === 1 ? " insumo" : " insumos");
+
+        document.getElementById("rec-total-units").textContent = rec.recommendedUnits + " un.";
+        document.getElementById("rec-total-batches").textContent = rec.batches + (rec.batches === 1 ? " lote de 10 un." : " lotes de 10 un.");
+        document.getElementById("calc-avg-sales").textContent = rec.dailyAvg + " un.";
+        document.getElementById("calc-future-orders").textContent = rec.futureOrdersQty + " un.";
+        document.getElementById("calc-total-target").textContent = rec.recommendedUnits + " un. (" + rec.batches + " lotes)";
+        document.getElementById("loss-summary-text").textContent = "Perdas registradas hoje: " + state.lossesToday + " un.";
+
+        document.querySelector("#nav-orders-count span").textContent = state.orders.length;
+        document.querySelector("#nav-low-stock-count span").textContent = lowStockCount;
+      }
+
+      function renderOrders() {
+        const tbody = document.getElementById("orders-table-body");
+        tbody.innerHTML = state.orders.map(order => {
+          const isFuture = order.type === "Encomenda Futura";
+          const badgeClass = isFuture
+            ? "bg-light-secondary-container text-light-on-secondary-container"
+            : "bg-success-container text-on-success-container";
+          return `
+            <tr class="hover:bg-light-surface-container-low transition-colors">
+              <td class="px-gutter-lg py-4 font-body text-label-lg text-light-on-surface">${order.client}</td>
+              <td class="px-gutter-lg py-4 font-body text-body-md text-light-on-surface-variant">${order.product}</td>
+              <td class="px-gutter-lg py-4 text-right font-mono text-mono-md tabular-nums text-light-on-surface">${order.qty} un.</td>
+              <td class="px-gutter-lg py-4">
+                <span class="inline-flex items-center px-3 py-1 rounded-full ${badgeClass} font-body text-label-sm">${order.type}</span>
+              </td>
+              <td class="px-gutter-lg py-4 font-body text-label-sm text-light-on-surface-variant">${order.time}</td>
+            </tr>
+          `;
+        }).join("");
+      }
+
+      function renderInventoryAndRecipe() {
+        const tbody = document.getElementById("inventory-table-body");
+        tbody.innerHTML = state.ingredients.map(item => {
+          const isLow = item.current <= item.min;
+          const badgeHtml = isLow
+            ? `<span role="status" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-error-container text-on-error-container font-body text-label-sm"><span class="w-1.5 h-1.5 rounded-full bg-error"></span>Estoque Baixo</span>`
+            : `<span role="status" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-success-container text-on-success-container font-body text-label-sm"><span class="w-1.5 h-1.5 rounded-full bg-success"></span>OK</span>`;
+
+          return `
+            <tr class="hover:bg-light-surface-container-low transition-colors">
+              <td class="px-gutter-lg py-4 font-body text-label-lg text-light-on-surface">${item.name}</td>
+              <td class="px-gutter-lg py-4 text-right font-mono text-mono-md tabular-nums text-light-on-surface">${formatQty(item.current, item.unit)}</td>
+              <td class="px-gutter-lg py-4 text-right font-mono text-mono-md tabular-nums text-light-on-surface-variant">${formatQty(item.min, item.unit)}</td>
+              <td class="px-gutter-lg py-4">${badgeHtml}</td>
+            </tr>
+          `;
+        }).join("");
+
+        const recipeMarkup = state.ingredients.map(item => `
+          <li class="py-3 flex items-center justify-between gap-gutter-sm">
+            <span class="font-body text-body-md text-light-on-surface">${item.name}</span>
+            <span class="font-mono text-mono-md tabular-nums text-light-primary">${formatQty(item.perBatch, item.unit)}</span>
+          </li>
+        `).join("");
+
+        document.getElementById("recipe-card-list").innerHTML = recipeMarkup;
+        document.getElementById("recipe-modal-list").innerHTML = recipeMarkup;
+      }
+
+      function renderShoppingList() {
+        const rec = getRecommendation();
+        document.getElementById("shopping-formula-badge").textContent =
+          "Base: " + rec.recommendedUnits + " un. (" + rec.batches + " lotes) + Estoque Mín.";
+
+        const itemsToBuy = state.ingredients
+          .map(item => {
+            const productionNeed = item.perBatch * rec.batches;
+            const totalRequired = productionNeed + item.min;
+            const toBuy = totalRequired - item.current;
+            return { ...item, totalRequired, toBuy };
+          })
+          .filter(item => item.toBuy > 0);
+
+        document.querySelector("#nav-shopping-count span").textContent = itemsToBuy.length;
+
+        const tbody = document.getElementById("shopping-table-body");
+        const emptyState = document.getElementById("shopping-empty-state");
+
+        if (itemsToBuy.length === 0) {
+          tbody.innerHTML = "";
+          emptyState.classList.remove("hidden");
+          return;
+        }
+
+        emptyState.classList.add("hidden");
+        tbody.innerHTML = itemsToBuy.map(item => `
+          <tr class="hover:bg-light-surface-container-low transition-colors">
+            <td class="px-gutter-lg py-4 font-body text-label-lg text-light-on-surface">${item.name}</td>
+            <td class="px-gutter-lg py-4 text-right font-mono text-mono-md tabular-nums text-light-on-surface-variant">${formatQty(item.current, item.unit)}</td>
+            <td class="px-gutter-lg py-4 text-right font-mono text-mono-md tabular-nums text-light-on-surface">${formatQty(item.totalRequired, item.unit)}</td>
+            <td class="px-gutter-lg py-4 text-right">
+              <span class="inline-flex items-center px-3 py-1 rounded-full bg-light-secondary-container text-light-on-secondary-container font-mono text-mono-md tabular-nums">
+                + ${formatQty(item.toBuy, item.unit)}
+              </span>
+            </td>
+          </tr>
+        `).join("");
+      }
+
+      function renderAll() {
+        renderDashboard();
+        renderOrders();
+        renderInventoryAndRecipe();
+        renderShoppingList();
+      }
+
+      // =========================================================================
+      // NAVEGAÇÃO E EVENTOS
+      // =========================================================================
+      const tabButtons = document.querySelectorAll(".nav-tab");
+      const tabPanels = document.querySelectorAll(".tab-panel");
+
+      function switchTab(targetName) {
+        tabPanels.forEach(panel => {
+          panel.classList.toggle("hidden", panel.id !== "tab-" + targetName);
+        });
+
+        tabButtons.forEach(btn => {
+          const isActive = btn.dataset.tabTarget === targetName;
+          btn.classList.toggle("bg-light-primary", isActive);
+          btn.classList.toggle("text-light-on-primary", isActive);
+          btn.classList.toggle("text-light-on-surface-variant", !isActive);
+          if (isActive) btn.setAttribute("aria-current", "page");
+          else btn.removeAttribute("aria-current");
+        });
+
+        closeMobileSidebar();
+      }
+
+      tabButtons.forEach(btn => btn.addEventListener("click", () => switchTab(btn.dataset.tabTarget)));
+
+      const sidebar = document.getElementById("app-sidebar");
+      const backdrop = document.getElementById("sidebar-backdrop");
+      function openMobileSidebar() { sidebar.classList.remove("-translate-x-full"); backdrop.classList.remove("hidden"); }
+      function closeMobileSidebar() { sidebar.classList.add("-translate-x-full"); backdrop.classList.add("hidden"); }
+      document.getElementById("mobile-menu-btn").addEventListener("click", openMobileSidebar);
+      document.getElementById("mobile-close-btn").addEventListener("click", closeMobileSidebar);
+      backdrop.addEventListener("click", closeMobileSidebar);
+
+      // Confirmar Produção (baixa no estado + Supabase)
+      document.getElementById("btn-confirm-production").addEventListener("click", async () => {
+        const rec = getRecommendation();
+        state.ingredients.forEach(item => {
+          const used = item.perBatch * rec.batches;
+          item.current = Math.max(0, item.current - used);
+        });
+
+        const statusBox = document.getElementById("production-status-box");
+        document.getElementById("production-status-text").textContent =
+          "Produção de " + rec.recommendedUnits + " un. confirmada! Os ingredientes foram baixados automaticamente do estoque.";
+        statusBox.classList.remove("hidden");
+
+        renderAll();
+        showToast("Baixa automática aplicada para " + rec.batches + " lotes de Brownie Tradicional.");
+
+        if (sb) {
+          await Promise.all([
+            ...state.ingredients.map(item =>
+              sb.from("pf_ingredientes").update({ estoque_atual: item.current }).eq("id", item.id)
+            ),
+            sb.from("pf_producoes").insert({
+              produto: "Brownie Tradicional",
+              lotes: rec.batches,
+              unidades: rec.recommendedUnits
+            })
+          ]);
+        }
+      });
+
+      document.getElementById("toast-close-btn").addEventListener("click", () => {
+        document.getElementById("toast-banner").classList.add("hidden");
+      });
+
+      // Modal de Perda
+      const lossModal = document.getElementById("loss-modal");
+      function closeLossModal() { lossModal.classList.add("hidden"); }
+      document.getElementById("btn-open-loss-modal").addEventListener("click", () => lossModal.classList.remove("hidden"));
+      document.getElementById("loss-modal-close").addEventListener("click", closeLossModal);
+      document.getElementById("loss-modal-cancel").addEventListener("click", closeLossModal);
+      document.getElementById("loss-modal-backdrop").addEventListener("click", closeLossModal);
+
+      document.getElementById("loss-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const qty = parseInt(document.getElementById("loss-qty").value, 10) || 1;
+        const reason = document.getElementById("loss-reason").value;
+        state.lossesToday += qty;
+        closeLossModal();
+        renderDashboard();
+        showToast("Perda registrada: " + qty + " un. (" + reason + ").");
+
+        if (sb) {
+          await sb.from("pf_perdas").insert({ quantidade: qty, motivo: reason });
+        }
+      });
+
+      // Modal de Ficha Técnica
+      const recipeModal = document.getElementById("recipe-modal");
+      function closeRecipeModal() { recipeModal.classList.add("hidden"); }
+      document.getElementById("btn-open-recipe-modal").addEventListener("click", () => recipeModal.classList.remove("hidden"));
+      document.getElementById("recipe-modal-close").addEventListener("click", closeRecipeModal);
+      document.getElementById("recipe-modal-done").addEventListener("click", closeRecipeModal);
+      document.getElementById("recipe-modal-backdrop").addEventListener("click", closeRecipeModal);
+
+      // Adicionar Pedido / Encomenda
+      document.getElementById("order-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const clientInput = document.getElementById("order-client");
+        const productInput = document.getElementById("order-product");
+        const qtyInput = document.getElementById("order-qty");
+        const typeInput = document.getElementById("order-type");
+
+        const client = clientInput.value.trim();
+        const product = productInput.value;
+        const qty = parseInt(qtyInput.value, 10) || 1;
+        const type = typeInput.value;
+
+        if (!client) return;
+
+        const newOrder = {
+          id: Date.now(),
+          client,
+          product,
+          qty,
+          type,
+          time: "Agora"
+        };
+
+        state.orders.unshift(newOrder);
+        if (type === "Venda Concluída") {
+          state.weeklySales += qty;
+        }
+
+        clientInput.value = "";
+        qtyInput.value = "10";
+        renderAll();
+        showToast(type + " registrada para " + client + " (" + qty + " un.).");
+
+        if (sb) {
+          const { data } = await sb.from("pf_pedidos").insert({
+            cliente: client,
+            produto: product,
+            quantidade: qty,
+            tipo: type,
+            horario: "Agora"
+          }).select().single();
+          if (data) newOrder.id = data.id;
+        }
+      });
+
+      // Resetar Demo (restaura estado inicial para a apresentação)
+      document.getElementById("btn-reset-demo").addEventListener("click", async () => {
+        state.weeklySales = 140;
+        state.lossesToday = 0;
+        state.orders = JSON.parse(JSON.stringify(INITIAL_ORDERS));
+        state.ingredients = JSON.parse(JSON.stringify(INITIAL_INGREDIENTS));
+        document.getElementById("production-status-box").classList.add("hidden");
+        renderAll();
+        showToast("Dados iniciais da apresentação restaurados.");
+
+        if (sb) {
+          await sb.from("pf_perdas").delete().neq("id", 0);
+          await sb.from("pf_producoes").delete().neq("id", 0);
+          await sb.from("pf_pedidos").delete().neq("id", 0);
+          await sb.from("pf_pedidos").insert(
+            [...INITIAL_ORDERS].reverse().map(o => ({
+              cliente: o.client,
+              produto: o.product,
+              quantidade: o.qty,
+              tipo: o.type,
+              horario: o.time
+            }))
+          );
+          await Promise.all(
+            INITIAL_INGREDIENTS.map(i =>
+              sb.from("pf_ingredientes").update({ estoque_atual: i.current }).eq("id", i.id)
+            )
+          );
+        }
+      });
+
+      // Inicializar
+      loadFromSupabase();
+    })();
+  </script>
+</body>
+</html>
