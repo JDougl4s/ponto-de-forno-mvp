@@ -3,7 +3,7 @@
 Aplicação web desenvolvida para pequenas confeitarias, docerias e padarias artesanais planejarem a produção com base no histórico de vendas e encomendas futuras, controlarem o estoque por ficha técnica, registrarem perdas e gerarem listas de compras automáticas.
 
 ## Link da Aplicação (MVP Online)
-- **Sistema rodando em produção:** [Acesse o Ponto de Forno](ponto-de-forno-mvp.vercel.app)
+- **Sistema rodando em produção:** [Acesse o Ponto de Forno](https://ponto-de-forno-mvp.vercel.app)
 
 ## Funcionalidades do MVP
 - **Painel & Recomendação de Produção:** Calcula a meta ideal de fornada cruzando a média diária de vendas com as encomendas confirmadas.
