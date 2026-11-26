@@ -2,6 +2,9 @@
 
 Aplicação web desenvolvida para pequenas confeitarias, docerias e padarias artesanais planejarem a produção com base no histórico de vendas e encomendas futuras, controlarem o estoque por ficha técnica, registrarem perdas e gerarem listas de compras automáticas.
 
+## Link da Aplicação (MVP Online)
+- **Sistema rodando em produção:** [Acesse o Ponto de Forno](ponto-de-forno-mvp.vercel.app)
+
 ## Funcionalidades do MVP
 - **Painel & Recomendação de Produção:** Calcula a meta ideal de fornada cruzando a média diária de vendas com as encomendas confirmadas.
 - **Pedidos & Encomendas:** Registra vendas de balcão e encomendas futuras, atualizando automaticamente a demanda do dia.
@@ -14,7 +17,8 @@ Aplicação web desenvolvida para pequenas confeitarias, docerias e padarias art
 - **Backend / Banco de Dados:** Supabase (PostgreSQL + API REST)
 - **Hospedagem:** Vercel
 
-## Como rodar o projeto
-1. Clone este repositório ou baixe os arquivos:
+## Como instalar e rodar localmente
+1. Clone o repositório:
    ```bash
    git clone [https://github.com/JDougl4s/ponto-de-forno-mvp.git](https://github.com/JDougl4s/ponto-de-forno-mvp.git)
+   cd ponto-de-forno-mvp
